@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>
+      GuangDong GDP and POP| Homework | ArcGIS API for JavaScript 4.23
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.23/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.23/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #compassDiv {
+        position: absolute;
+        top:95%;
+        left: 10%;
+        z-index: 1;
+      }
+      #basemapGalleryDiv {
+        position: absolute;
+        top:17%;
+        left: 1%;
+        height: 40%;
+        width: 240px;
+        z-index: 1;
+      }
+      #legendDiv{
+        position: absolute;
+        z-index: 1;
+        left:1% ;
+        top: 60%;
+      }
+      #searchDiv{
+        position: absolute;
+        z-index: 1;
+        left: 4% ;
+        top: 7%;
+      }
+      #editorDiv{
+        position: absolute;
+        z-index: 1;
+        left: 27%;
+        top: 7%;
+        height: 4%;
+        width: 175px;
+      }
+      .HeaderDiv{
+        box-sizing: border-box;
+        height: 40px;
+        width: 100%;
+        background-color: #3d6d9a;
+        font-size: 27px;
+        color: white;
+        padding-left: 30px;
+      }
+    </style>
+
+    <script>
+      require([
+        "esri/Map",
+        "esri/WebScene",
+        "esri/views/MapView",
+        "esri/views/SceneView",
+        "esri/layers/FeatureLayer",
+        "esri/widgets/Compass",
+        "esri/widgets/ScaleBar",
+        "esri/widgets/Legend",
+        "esri/widgets/LayerList",
+        "esri/widgets/BasemapGallery",
+        "esri/widgets/Search",
+        "esri/widgets/Editor",
+        "esri/widgets/Print"
+        ], (
+          Map,
+          WebScene,
+          MapView,
+          SceneView, 
+          FeatureLayer,
+          Compass,
+          ScaleBar,
+          Legend,
+          LayerList,
+          BasemapGallery,
+          Search,
+          Editor,
+          Print
+      ) => {
+        const map = new Map({
+          basemap: "streets-night-vector"
+        });
+        const mapView = new MapView({
+          container: "viewDiv",
+          map: map,
+          extent: {
+            xmin: 1.2207831823800001E7,
+            ymin: 2267477.8286191556,
+            xmax: 1.3135057050400699E7,
+            ymax: 2971713.8326554173,
+            spatialReference: 102100
+          }
+        });
+        
+        /*const scene = new WebScene({
+            portalItem: {id: "00c4737b24c5472cae6506695359c2b7"}
+        });*/
+        /*const view = new SceneView({
+          container: "viewDiv",
+          map: scene
+        });*/
+        
+        const fLayer1 = new FeatureLayer({
+          url: "https://www.geosceneonline.cn/server/rest/services/Hosted/广东POP3D/FeatureServer",
+          opacity: 0.75,
+          title: "广东各市人口",
+          popupTemplate: {
+            title: "广东各市人口",
+            lastEditInfoEnabled: false,
+            content: [{
+              type: "fields", fieldInfos:[{fieldName: "name"},{fieldName: "type"}]
+            }]
+          }
+        });
+        const fLayer2 = new FeatureLayer({
+          url: "https://www.geosceneonline.cn/server/rest/services/Hosted/广东GDP2020/FeatureServer",
+          opacity: 0.75,
+          title: "广东2020GDP",
+          popupTemplate: {
+            title: "广东2020GDP",
+            lastEditInfoEnabled: false,
+            content: [{
+              type: "fields", fieldInfos:[{fieldName: "name"},{fieldName: "type"}]
+            }]
+          }
+        });
+        
+        const compass = new Compass({
+          view: mapView,
+          container: "compassDiv"
+        });
+        
+        const scaleBar = new ScaleBar({
+          view: mapView,
+          style: "ruler",
+          unit: "non-metric",
+        });
+        
+        const legend = new Legend({
+          view: mapView,
+          container: "legendDiv",
+          layerInfos: [{
+            layer: fLayer1,fLayer2,
+            title: "广东2020GDP和各市人口"
+          }]
+        });
+        
+        const layerList = new LayerList({
+          view: mapView,
+          listItemCreatedFunction: (event) => {
+            const item = event.item;
+            if (item.layer.type != "group") {
+              // don't show legend twice
+              item.panel = {
+                content: "legend",
+                open: true
+              };
+            }
+          }
+        });
+        
+        const basemapGallery = new BasemapGallery({
+          view: mapView,
+          container: "basemapGalleryDiv"
+        });
+        
+        const search = new Search({
+          view: mapView,
+          container: "searchDiv"
+        });
+        
+        const editor = new Editor({
+          view: mapView,
+          container: "editorDiv"
+        });
+        
+        const print = new Print({
+          view: mapView
+        });
+        
+
+        map.addMany([fLayer1, fLayer2]);
+        mapView.ui.add(scaleBar, {position: "bottom-left"});
+        mapView.ui.add(layerList, "top-right");
+        mapView.ui.add(print,"bottom-right");
+      });
+    </script>
+  </head>
+
+  <body>
+    <div class="HeaderDiv">广东2020GDP和各市人口</div>
+    <div id="compassDiv"></div>
+    <div id="viewDiv"></div>
+    <div id="basemapGalleryDiv"></div>
+    <div id="legendDiv"></div>
+    <div id="searchDiv"></div>
+    <div id="editorDiv"></div>
+    <div id="printDiv"></div>
+  </body>
+</html>
