@@ -27,39 +27,66 @@
       }
       #compassDiv {
         position: absolute;
-        top:95%;
+        bottom:1%;
         left: 10%;
         z-index: 1;
       }
       #basemapGalleryDiv {
         position: absolute;
-        top:17%;
-        left: 1%;
-        height: 40%;
+        top:40px;
+        right: 0%;
+        height: 95%;
         width: 240px;
         z-index: 1;
       }
-      #legendDiv{
+      #legendDiv {
         position: absolute;
         z-index: 1;
         left:1% ;
-        top: 60%;
+        bottom: 9%;
       }
-      #searchDiv{
+      #searchDiv {
         position: absolute;
         z-index: 1;
-        left: 4% ;
+        left: 4%;
         top: 7%;
       }
-      #editorDiv{
+      #editorDiv {
         position: absolute;
         z-index: 1;
-        left: 27%;
-        top: 7%;
-        height: 4%;
-        width: 175px;
+        top: 1%;
+        left: 101%;
       }
-      .HeaderDiv{
+      #printDiv {
+        position: absolute;
+        z-index: 1;
+        top: 1%;
+        left: 115%;
+      }
+      #topbar {
+        background: #fff;
+        padding: 10px;
+      }
+      .action-button {
+        font-size: 16px;
+        background-color: transparent;
+        border: 1px solid #d3d3d3;
+        color: #6e6e6e;
+        height: 32px;
+        width: 32px;
+        text-align: center;
+        box-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
+      }
+      .action-button:hover,
+      .action-button:focus {
+        background: #0079c1;
+        color: #e4e4e4;
+      }
+      .active {
+        background: #0079c1;
+        color: #e4e4e4;
+      }
+      .HeaderDiv {
         box-sizing: border-box;
         height: 40px;
         width: 100%;
@@ -84,7 +111,10 @@
         "esri/widgets/BasemapGallery",
         "esri/widgets/Search",
         "esri/widgets/Editor",
-        "esri/widgets/Print"
+        "esri/widgets/Print",
+        "esri/widgets/DistanceMeasurement2D",
+        "esri/widgets/AreaMeasurement2D",
+        "esri/widgets/Expand"
         ], (
           Map,
           WebScene,
@@ -98,8 +128,13 @@
           BasemapGallery,
           Search,
           Editor,
-          Print
+          Print,
+          DistanceMeasurement2D, 
+          AreaMeasurement2D,
+          Expand
       ) => {
+        
+        var activeWidget = null;
         const map = new Map({
           basemap: "streets-night-vector"
         });
@@ -176,7 +211,7 @@
               // don't show legend twice
               item.panel = {
                 content: "legend",
-                open: true
+                open: false
               };
             }
           }
@@ -193,7 +228,12 @@
         });
         
         const editor = new Editor({
+          view: mapView
+        });
+        
+        const editorExpand = new Expand({
           view: mapView,
+          content: editor,
           container: "editorDiv"
         });
         
@@ -201,11 +241,89 @@
           view: mapView
         });
         
-
+        const printExpand = new Expand({
+          view: mapView,
+          content: print,
+          container: "printDiv"
+        });
+        
+        
+      
         map.addMany([fLayer1, fLayer2]);
         mapView.ui.add(scaleBar, {position: "bottom-left"});
-        mapView.ui.add(layerList, "top-right");
-        mapView.ui.add(print,"bottom-right");
+        mapView.ui.add(editorExpand, "top-left");
+        mapView.ui.add(printExpand, "top-left");
+        mapView.ui.add(layerList, "top-left");
+        mapView.ui.add("topbar", "top-left");
+        
+        document
+          .getElementById("distanceButton")
+          .addEventListener("click", function () {
+            setActiveWidget(null);
+            if (!this.classList.contains("active")) {
+              setActiveWidget("distance");
+            } else {
+              setActiveButton(null);
+            }
+          });
+
+        document
+          .getElementById("areaButton")
+          .addEventListener("click", function () {
+            setActiveWidget(null);
+            if (!this.classList.contains("active")) {
+              setActiveWidget("area");
+            } else {
+              setActiveButton(null);
+            }
+          });
+
+        function setActiveWidget(type) {
+          switch (type) {
+            case "distance":
+              activeWidget = new DistanceMeasurement2D({
+                view: mapView
+              });
+
+              // skip the initial 'new measurement' button
+              activeWidget.viewModel.start();
+
+              mapView.ui.add(activeWidget, "top-left");
+              setActiveButton(document.getElementById("distanceButton"));
+              break;
+            case "area":
+              activeWidget = new AreaMeasurement2D({
+                view: mapView
+              });
+
+              // skip the initial 'new measurement' button
+              activeWidget.viewModel.start();
+
+              mapView.ui.add(activeWidget, "top-left");
+              setActiveButton(document.getElementById("areaButton"));
+              break;
+            case null:
+              if (activeWidget) {
+                mapView.ui.remove(activeWidget);
+                activeWidget.destroy();
+                activeWidget = null;
+              }
+              break;
+          }
+        }
+
+        function setActiveButton(selectedButton) {
+          // focus the view to activate keyboard shortcuts for sketching
+          mapView.focus();
+          var elements = document.getElementsByClassName("active");
+          for (var i = 0; i < elements.length; i++) {
+            elements[i].classList.remove("active");
+          }
+          if (selectedButton) {
+            selectedButton.classList.add("active");
+          }
+        }
+      
       });
     </script>
   </head>
@@ -219,5 +337,19 @@
     <div id="searchDiv"></div>
     <div id="editorDiv"></div>
     <div id="printDiv"></div>
+    <div id="topbar">
+      <button
+        class="action-button esri-icon-measure-line"
+        id="distanceButton"
+        type="button"
+        title="Measure distance between two or more points"
+      ></button>
+      <button
+        class="action-button esri-icon-measure-area"
+        id="areaButton"
+        type="button"
+        title="Measure area"
+      ></button>
+    </div>
   </body>
 </html>
