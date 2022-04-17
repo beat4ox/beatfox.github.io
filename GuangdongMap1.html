@@ -51,17 +51,17 @@
         left: 4%;
         top: 7%;
       }
-      #editorDiv {
-        position: absolute;
-        z-index: 1;
-        top: 1%;
-        left: 101%;
-      }
       #printDiv {
         position: absolute;
         z-index: 1;
-        top: 1%;
-        left: 115%;
+        top: 7%;
+        left: 18%;
+      }
+      #sketchDiv{
+        position: absolute;
+        z-index: 1;
+        top: 7%;
+        left: 20%;
       }
       #topbar {
         background: #fff;
@@ -104,6 +104,7 @@
         "esri/views/MapView",
         "esri/views/SceneView",
         "esri/layers/FeatureLayer",
+        "esri/layers/GraphicsLayer",
         "esri/widgets/Compass",
         "esri/widgets/ScaleBar",
         "esri/widgets/Legend",
@@ -114,26 +115,28 @@
         "esri/widgets/Print",
         "esri/widgets/DistanceMeasurement2D",
         "esri/widgets/AreaMeasurement2D",
+        "esri/widgets/Sketch",
         "esri/widgets/Expand"
-        ], (
-          Map,
-          WebScene,
-          MapView,
-          SceneView, 
-          FeatureLayer,
-          Compass,
-          ScaleBar,
-          Legend,
-          LayerList,
-          BasemapGallery,
-          Search,
-          Editor,
-          Print,
-          DistanceMeasurement2D, 
-          AreaMeasurement2D,
-          Expand
+      ], (
+        Map,
+        WebScene,
+        MapView,
+        SceneView,
+        FeatureLayer,
+        GraphicsLayer,
+        Compass,
+        ScaleBar,
+        Legend,
+        LayerList,
+        BasemapGallery,
+        Search,
+        Editor,
+        Print,
+        DistanceMeasurement2D,
+        AreaMeasurement2D,
+        Sketch,
+        Expand
       ) => {
-        
         var activeWidget = null;
         const map = new Map({
           basemap: "streets-night-vector"
@@ -142,14 +145,14 @@
           container: "viewDiv",
           map: map,
           extent: {
-            xmin: 1.2207831823800001E7,
+            xmin: 1.2207831823800001e7,
             ymin: 2267477.8286191556,
-            xmax: 1.3135057050400699E7,
+            xmax: 1.3135057050400699e7,
             ymax: 2971713.8326554173,
             spatialReference: 102100
           }
         });
-        
+
         /*const scene = new WebScene({
             portalItem: {id: "00c4737b24c5472cae6506695359c2b7"}
         });*/
@@ -157,7 +160,7 @@
           container: "viewDiv",
           map: scene
         });*/
-        
+
         const fLayer1 = new FeatureLayer({
           url: "https://www.geosceneonline.cn/server/rest/services/Hosted/广东POP3D/FeatureServer",
           opacity: 0.75,
@@ -165,9 +168,12 @@
           popupTemplate: {
             title: "广东各市人口",
             lastEditInfoEnabled: false,
-            content: [{
-              type: "fields", fieldInfos:[{fieldName: "name"},{fieldName: "type"}]
-            }]
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [{ fieldName: "name" }, { fieldName: "type" }]
+              }
+            ]
           }
         });
         const fLayer2 = new FeatureLayer({
@@ -177,32 +183,38 @@
           popupTemplate: {
             title: "广东2020GDP",
             lastEditInfoEnabled: false,
-            content: [{
-              type: "fields", fieldInfos:[{fieldName: "name"},{fieldName: "type"}]
-            }]
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [{ fieldName: "name" }, { fieldName: "type" }]
+              }
+            ]
           }
         });
-        
+
         const compass = new Compass({
           view: mapView,
           container: "compassDiv"
         });
-        
+
         const scaleBar = new ScaleBar({
           view: mapView,
           style: "ruler",
-          unit: "non-metric",
+          unit: "non-metric"
         });
-        
+
         const legend = new Legend({
           view: mapView,
           container: "legendDiv",
-          layerInfos: [{
-            layer: fLayer1,fLayer2,
-            title: "广东2020GDP和各市人口"
-          }]
+          layerInfos: [
+            {
+              layer: fLayer1,
+              fLayer2,
+              title: "广东2020GDP和各市人口"
+            }
+          ]
         });
-        
+
         const layerList = new LayerList({
           view: mapView,
           listItemCreatedFunction: (event) => {
@@ -216,46 +228,61 @@
             }
           }
         });
-        
+
         const basemapGallery = new BasemapGallery({
           view: mapView,
           container: "basemapGalleryDiv"
         });
-        
+
         const search = new Search({
           view: mapView,
           container: "searchDiv"
         });
-        
+
         const editor = new Editor({
           view: mapView
         });
-        
+
         const editorExpand = new Expand({
           view: mapView,
           content: editor,
           container: "editorDiv"
         });
-        
+
         const print = new Print({
           view: mapView
         });
-        
+
         const printExpand = new Expand({
           view: mapView,
           content: print,
           container: "printDiv"
         });
+
+        const graphicsLayer = new GraphicsLayer();
+        mapView.when(() => {
+          const sketch = new Sketch({
+            layer: graphicsLayer,
+            view: mapView,
+            // graphic will be selected as soon as it is created
+            creationMode: "update",
+          });
+          const sketchExpand = new Expand({
+            view: mapView,
+            content: sketch,
+            container: "sketchDiv"
+          });
+        })
         
-        
-      
+
         map.addMany([fLayer1, fLayer2]);
-        mapView.ui.add(scaleBar, {position: "bottom-left"});
-        mapView.ui.add(editorExpand, "top-left");
-        mapView.ui.add(printExpand, "top-left");
+        mapView.ui.add(scaleBar, { position: "bottom-left" });
+        // mapView.ui.add(editorExpand, "top-left");
+        // mapView.ui.add(printExpand, "top-left");
+        // mapView.ui.add(sketchExpand, "top-left");
         mapView.ui.add(layerList, "top-left");
         mapView.ui.add("topbar", "top-left");
-        
+
         document
           .getElementById("distanceButton")
           .addEventListener("click", function () {
@@ -323,7 +350,6 @@
             selectedButton.classList.add("active");
           }
         }
-      
       });
     </script>
   </head>
@@ -337,6 +363,7 @@
     <div id="searchDiv"></div>
     <div id="editorDiv"></div>
     <div id="printDiv"></div>
+    <div id="sketchDiv"></div>
     <div id="topbar">
       <button
         class="action-button esri-icon-measure-line"
